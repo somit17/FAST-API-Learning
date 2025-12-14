@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from typing import Optional
 from random import randrange
 from fastapi import FastAPI, Body,Response,status
@@ -33,6 +34,12 @@ def find_post(id):
         if p["id"]==id:
             return p
     return None
+
+def find_index_post(id):
+    for index,post in enumerate(my_posts):
+        if id==post['id']:
+            return index
+    return None
 @app.get("/")
 def root():
     return {"message": "Hello Welcome to fast API"}
@@ -60,3 +67,11 @@ def get_post(id:int,response:Response):
     return {
         "post_detail" : post
     }
+
+@app.delete("/posts/{id}")
+def delete_post(id:int):
+    index = find_index_post(id)
+    if index == None:
+        return Response(status_code=status.HTTP_404_NOT_FOUND,content=f"Post with id : {id} not found")
+    my_posts.pop(index)
+    return Response(status_code=status.HTTP_200_OK,content=f"Post with id : {id} deleted successfully !")
