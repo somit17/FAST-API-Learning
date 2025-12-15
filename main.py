@@ -1,16 +1,18 @@
-from http.client import HTTPException
-from typing import Optional
 from random import randrange
-from fastapi import FastAPI, Body,Response,status
-from pydantic import BaseModel
+from fastapi import FastAPI, Body,Response,status,Depends
+import schemas
+import models
+from sqlalchemy.orm import Session
+from database import engine, SessionLocal, get_db
+
+#Create tables
+models.Base.metadata.create_all(bind=engine)
+
+
 app = FastAPI()
 
 
-class Post(BaseModel):
-    title:str
-    content : str
-    published:bool = True
-    rating:Optional[int]=None
+
 
 
 my_posts=[
@@ -50,12 +52,12 @@ def get_posts():
     return {"data":my_posts}
 
 @app.post("/create_posts")
-def create_posts(post:Post):
-    print(post.rating)
-    post_dict = post.dict()
-    post_dict['id']=randrange(0,100000)
-    my_posts.append(post_dict)
-    return {"data":post_dict['id']}
+def create_posts(request:schemas.Post,db:Session=Depends(get_db)):
+   new_post = models.Posts(title=request.title,description=request.content)
+   db.add(new_post)
+   db.commit()
+   db.refresh(new_post)
+   return new_post
 
 @app.get("/posts/{id}")
 def get_post(id:int,response:Response):
